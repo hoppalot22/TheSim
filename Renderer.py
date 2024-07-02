@@ -6,8 +6,8 @@ from GameTools import Vector2, Vector3
 
 class Renderer:
     
-    def __init__(self, parent):
-        self.parent = parent
+    def __init__(self):
+
         self.w, self.h = 1280, 720
                
         self.screen = pygame.display.set_mode((self.w,self.h))

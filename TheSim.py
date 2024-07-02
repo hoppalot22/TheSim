@@ -7,9 +7,12 @@ import os
 import Renderer
 import Camera
 import World
+import GameTools
 from GameTools import Vector2, Vector3
 
 class Game:
+
+    __name__ = "Game"
 
     def __init__(self):
         
@@ -21,7 +24,7 @@ class Game:
         self.running = True
         self.screen = pygame.display.set_mode((1280, 720))
         self.clock = pygame.time.Clock()
-        self.renderer = Renderer.Renderer(self)
+        self.renderer = Renderer.Renderer()
         
         self.InitialConditions()
 
@@ -43,11 +46,17 @@ class Game:
             self.running = False
 
     def Update(self):
-        os.system('cls')
+        #os.system('cls')
         self.HandleEvents()
             
         for world in self.worlds:
             world.Update()       
+        
+        memList, memSum = GameTools.ObjectMemory(self)
+        #print(memSum, "memSum")
+        
+        #for attribute in memList:
+         #   print(attribute)
         
         self.renderer.FillScreen()
         self.renderer.RenderShots(self.GetShots(self.worlds[0]))

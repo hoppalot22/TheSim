@@ -1,5 +1,6 @@
 from functools import singledispatchmethod
 import pygame
+import sys
 import math
 
 class Vector2:
@@ -225,8 +226,26 @@ def PrintNpArray(arr):
 
 def ArrayToSurf(nparray):
     return pygame.surfarray.make_surface(nparray).convert_alpha()
+   
+def ObjectMemory(arg, memSum = 0):
+    memList = []
+    #print(arg)
+    if hasattr(arg, "__dict__"):
+        #print(arg.__dict__)
+        for k, v in vars(arg).items():
+            if (not(k == "parent")):
+                #print (k, v)
+                memSum += sys.getsizeof(v)
+                print(memSum)
+                memList.append([k, sys.getsizeof(v), v])
+                next = ObjectMemory(v, memSum)
+                memList.append(next[0])
+                memSum += next[1]
+        #print("\n")
+        return memList, memSum
+    #print("\n")
+    return memList, memSum
     
- 
 def Main():
     
     vec1 = Vector3(3,5, 12)

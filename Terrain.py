@@ -16,8 +16,8 @@ class Terrain:
             for j in range(initialChunkNum):
                 self.AddChunk(self.offset+i,self.offset+j)
     
-    def __repr__(self):
-        return str(self.chunkMap)
+    #def __repr__(self):
+     #   return str(self.chunkMap)
     
     def AddChunk(self, x, y):
         #List of Columns
