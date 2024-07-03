@@ -92,7 +92,7 @@ class Animal(GameObject.GameObject):
         self.SpecUpdate()
         self.UpdateSprite()
         
-        #print(f"{self.name} (ID: {self.id}) is facing {self.forward}")
+        #print(f"{self.name} (ID: {self.id}) is facing {self.forward} in position {self.position}")
     
     def SetSpeed(self, speed):
         self.speed = min(speed, self.maxSpeed)
@@ -101,7 +101,7 @@ class Animal(GameObject.GameObject):
         self.CheckSurroundings()
     
     def Move(self):        
-        self.position += self.forward*self.speed/100
+        self.position += self.forward*self.speed/5000
         self.SpecMove()
     
     def FaceDirection(self, vec):
@@ -114,7 +114,6 @@ class Animal(GameObject.GameObject):
         self.directionBias = Vector3(*[random.randint(-100, 100), 0, random.randint(-100, 100)]).iNorm()
         resultantMeander = (self.forward*10 + self.directionBias*2 + homeBias*2).iNorm()
         self.FaceDirection(resultantMeander)
-        #self.RotateBy(math.radians(changeAmount), 1)
     
     def Die(self):
         self.Stop()
@@ -160,9 +159,10 @@ class Animal(GameObject.GameObject):
         
 class Cat(Animal):
         
-        def __init__(self, breed = "Tabby"):       
+        def __init__(self, breed = "Tabby", size = 300):       
             super().__init__()
             
+            self.size = size
             self.breed = breed
         
         def SpecUpdate(self):
@@ -176,7 +176,7 @@ class Cat(Animal):
         
         def Meow(self):
             #self.Stop()
-            self.EmitNoise(volume = 200, friendliness = 1000, onomat = "Meow")
+            self.EmitNoise(volume = 20, friendliness = 1000, onomat = "Meow")
         
         def Flee(self, gameObject):
         
@@ -187,7 +187,7 @@ class Cat(Animal):
             self.speed = self.maxSpeed
             self.FaceDirection(self.position - gameObject.position)
             
-            if (gameObject.position-self.position).Mag()>800:
+            if (gameObject.position-self.position).Mag()>8:
                 self.activities[flee]["achieved"] = True
             else:
                 if "time" not in self.activities[flee].keys():
@@ -218,9 +218,10 @@ class Cat(Animal):
                 
 class Dog(Animal):
         
-        def __init__(self, breed = "German Shepard"):
+        def __init__(self, breed = "German Shepard", size = 500):
             super().__init__()
             
+            self.size = size
             self.breed = breed
             self.sprite = Sprite.Sprite().Square(size = 25, colour = [200,200,100,255])
             self.maxSpeed = 400
@@ -238,7 +239,7 @@ class Dog(Animal):
         
         def Woof(self):
             #self.Stop()
-            self.EmitNoise(volume = 150, friendliness = 200, onomat = "Woof")
+            self.EmitNoise(volume = 15, friendliness = 200, onomat = "Woof")
         
         def Chase(self, gameObject):
             
@@ -250,7 +251,7 @@ class Dog(Animal):
             self.speed = self.maxSpeed
             self.FaceDirection(gameObject.position-self.position)
             
-            if (gameObject.position-self.position).Mag()>500:
+            if (gameObject.position-self.position).Mag()>5:
                 self.activities[chase]["achieved"] = False
             else:
                 if "time" not in self.activities[chase].keys():
