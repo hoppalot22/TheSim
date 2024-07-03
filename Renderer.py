@@ -23,6 +23,7 @@ class Renderer:
 
     def FillScreen(self):
         self.screen.fill("black")
+        
 
     def RenderDrawables(self):
         for drawable in self.drawQueue:

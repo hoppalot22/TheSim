@@ -27,16 +27,16 @@ class Camera:
         self.shotSurf = GameTools.ArrayToSurf(self.shotArray)
         
     def CanSee(self, gameObject):
-        Objx, Objy, Obz = gameObject.position.vecList
-        xLower, zlower, xUpper, zUpper = self.CalcShotBounds()
+        Objx, Objy, Objz = gameObject.position.vecList
+        xLower, zLower, xUpper, zUpper = self.CalcShotBounds()
         
-        if (xLower < Objx < xUpper) and (yLower < Objy < yUpper):        
+        if (xLower < Objx < xUpper) and (zLower < Objz < zUpper):        
             if not(gameObject in self.gameObjectsInShot):
                     self.gameObjectsInShot.append(gameObject)
         else:
             for i, _gameObject in enumerate(self.gameObjectsInShot):
                 if _gameObject == gameObject:
-                    del self.gameObjectsInShot[i]  
+                    self.gameObjectsInShot.remove(_gameObject)  
 
     def VisibleChunks(self):
         maxSize = self.terrain.maxSize
@@ -51,24 +51,46 @@ class Camera:
                         pass
 
     def MakeTileMap(self):
-        requiredTileBounds = self.CalcShotBounds()
-        requiredChunkBounds = [int(requiredTileBounds[0]) - 1, int(requiredTileBounds[1]) - 1, int(requiredTileBounds[0]) + 1, int(requiredTileBounds[1]) + 1]
+        self.requiredTileBounds = self.CalcShotBounds()
+        requiredChunkBounds = [int(self.requiredTileBounds[0]/32) - 1, int(self.requiredTileBounds[1]/32) - 1, -int(self.requiredTileBounds[0]/32) + 1, -int(self.requiredTileBounds[1]/32) + 1]
         tileMap = self.terrain.BuildTileMap(requiredChunkBounds)
-        self.tileMap = tileMap
-        tileMapx = tileMapy = self.tileMap.shape[0]
         
-        return cv2.resize(self.tileMap, (self.resolution[1], self.resolution[0]),interpolation=cv2.INTER_NEAREST)
+        #print(requiredTileBounds, requiredChunkBounds, tileMap.shape)
+        
+        return tileMap
+        
+
+  
     
     def GetShot(self):
         
-        for attribute, value in self.__dict__.items():
-            print(attribute, value)      
- 
-        return GameTools.ArrayToSurf(self.shotArray)
+        tileMap = self.MakeTileMap()
+        tileMapx = tileMapy = tileMap.shape[0]
+        
+        resize = cv2.resize(tileMap, (self.resolution[1], self.resolution[0]), interpolation=cv2.INTER_NEAREST)
+        img = GameTools.ArrayToSurf(resize)
+        
+        for gameObject in self.gameObjectsInShot:
+            objectSprite = gameObject.sprite
+            objectSize = gameObject.size
+            spriteSizeX, spriteSizeY = objectSprite.img.get_size()
+            scaleFactor = self.tile2pixRatio
+            
+            img = pygame.transform.scale(objectSprite.img, [spriteSizeX*scaleFactor, spriteSizeY*scaleFactor])
+
+            objectPosition = gameObject.position
+            
+            xPos = self.resolution[0]*(objectPosition.x - self.requiredTileBounds[0])/(self.requiredTileBounds[2]-self.requiredTileBounds[0]) + self.requiredTileBounds[0]
+            yPos = self.resolution[1]*(objectPosition.z - self.requiredTileBounds[1])/(self.requiredTileBounds[3]-self.requiredTileBounds[1]) + self.requiredTileBounds[1]
+            
+            img.blit(img, [xPos - spriteSizeX*scaleFactor, yPos - spriteSizeY*scaleFactor])
+            
+        return img
 
     def CalcShotBounds(self):
-        self.boundsHalfWidth = math.tan(self.HFOV/2)*self.position.y
-        return [self.position.x - self.boundsHalfWidth, self.position.z - self.boundsHalfWidth * self.aspectRatio, self.position.z + self.boundsHalfWidth, self.position.z + self.boundsHalfWidth * self.aspectRatio ]
+        self.tile2pixRatio = -math.tan(self.HFOV/2)
+        self.boundsHalfWidth = self.tile2pixRatio*self.position.y
+        return [self.position.x - self.boundsHalfWidth, self.position.z - self.boundsHalfWidth / self.aspectRatio, self.position.z + self.boundsHalfWidth, self.position.z + self.boundsHalfWidth / self.aspectRatio ]
         
     def Pan(x,z):
         camera.position += Vector3(x, 0, z)*self.zoom/1000

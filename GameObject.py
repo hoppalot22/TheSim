@@ -81,11 +81,13 @@ class Interaction:
 
 class GameObject:
 
-    def __init__(self, name = "Nemo", position = Vector3(0,0,0), forward = Vector3(1,0,0)):
+    def __init__(self, name = "Nemo", position = Vector3(0,0,0), forward = Vector3(1,0,0), size = 1000):
         self.position = position
         self.forward = forward
         self.angle = 0
         self.name = name
+        
+        self.size = size
         
         self.memory = Memory(self)
         self.parent = None
@@ -133,7 +135,7 @@ class GameObject:
         return f"id: {self.id}, name: {self.name}"
 
     def __eq__(self, other):
-        return self.__dict__ == other.__dict_
+        return self.__dict__ == other.__dict__
 
 def Main():
     myObject = GameObject(Vector2(3,6), 45)    

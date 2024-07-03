@@ -226,6 +226,36 @@ def PrintNpArray(arr):
 
 def ArrayToSurf(nparray):
     return pygame.surfarray.make_surface(nparray).convert_alpha()
+
+def GetInstanceSubStructure(instance, depth = 0):
+    
+    depth+=1
+    print (depth)
+    
+    structure = []
+    if depth >100:
+        return structure, depth
+
+    
+    if (type(instance) == type(list())):
+        if len(instance) == 0:
+            return None
+        else:
+            instance = instance[0]
+    
+    if hasattr(instance, "__dict__"):
+        #print(arg.__dict__)
+        for k, v in vars(instance).items():
+            if (not(k == "parent")):
+                next = GetInstanceSubStructure(v, depth)
+                if not(next is None):
+                    structure.append([k, depth])
+                    structure.append(next)
+                
+        #print("\n")
+        return structure, depth
+    #print("\n")
+    return structure, depth
    
 def ObjectMemory(arg, memSum = 0):
     memList = []

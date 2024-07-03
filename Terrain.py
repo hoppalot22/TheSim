@@ -16,8 +16,8 @@ class Terrain:
             for j in range(initialChunkNum):
                 self.AddChunk(self.offset+i,self.offset+j)
     
-    #def __repr__(self):
-     #   return str(self.chunkMap)
+    def __repr__(self):
+        return str(self.chunkMap)               
     
     def AddChunk(self, x, y):
         #List of Columns
@@ -39,11 +39,10 @@ class Terrain:
         tileMap = np.concatenate(tileMapsX, axis = 1)
         return tileMap
             
-        
-        
 class Chunk:
     
     def __init__(self, chunkMapPos):
+        bias = np.kron(np.linspace(1,8,num = 4).reshape(2,2,1),np.ones((16,16,1)))*100
         self.chunkMapPos = chunkMapPos
-        self.tileMap = np.where(np.random.rand(32,32)<.5, int(0), int(1))
+        self.tileMap = np.random.rand(32,32, 3)*10 + bias
         

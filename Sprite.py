@@ -6,6 +6,7 @@ import pygame
 class Sprite():
 
     def __init__(self, img = None):
+        self.baseImg = img
         self.img = img
         self.offset = Vector2(0,0)
         if not (img is None):
@@ -19,7 +20,7 @@ class Sprite():
     
     
     def Rotate(self, angle):
-        self.img = pygame.transform.rotate(self.img, angle)
+        self.img = pygame.transform.rotate(self.baseImg, angle)
     
     @classmethod
     def Square(cls, size = 10, colour = [255,255,255,255], forwardArrow = True):

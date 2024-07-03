@@ -20,7 +20,7 @@ class World:
 
     def Update(self):
         self.time += 1
-        print(f"World has existed for {self.time} seconds")
+        #print(f"World has existed for {self.time} seconds")
         for gameObject in self.gameObjectList:
             gameObject.Update()
             for camera in self.cameras:

@@ -17,6 +17,7 @@ class Game:
     def __init__(self):
         
         self.worlds = []
+        self.currentWorld = None
         self.InitSim()
 
     def InitSim(self):
@@ -37,9 +38,18 @@ class Game:
                 self.MouseHandler(event)
 
     def MouseHandler(self,event):
-        print(event)
+        #print(event)
         if event.button == 0:
             pass
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            self.Zoom(event)
+
+    def Zoom(self, event):
+        if event.button%2 == 0:
+            self.currentWorld.selectedCamera.position.y -= event.button/2
+        else:
+            self.currentWorld.selectedCamera.position.y += event.button/2
+
 
     def KeyHandler(self, event):
         if event.key == pygame.K_ESCAPE:
@@ -51,12 +61,6 @@ class Game:
             
         for world in self.worlds:
             world.Update()       
-        
-        memList, memSum = GameTools.ObjectMemory(self)
-        #print(memSum, "memSum")
-        
-        #for attribute in memList:
-         #   print(attribute)
         
         self.renderer.FillScreen()
         self.renderer.RenderShots(self.GetShots(self.worlds[0]))
@@ -72,7 +76,7 @@ class Game:
 
     def InitialConditions(self):
         self.myWorld = World.World()
-        self.myWorld.AddCamera(Vector3(0,100,0), [int(1280/2),int(720/2)])
+        self.myWorld.AddCamera(Vector3(0,10,0), [int(1280/2),int(720/2)])
         
         self.myCat = Animal.Cat(breed = "Black")
         self.myCat.name = "Charles"
@@ -88,6 +92,7 @@ class Game:
         self.worlds.append(world)
         world.parent = self
         
+        self.currentWorld = world
         self.AddRenderables(world.gameObjectList)
         
     def AddRenderables(self, renderables):
