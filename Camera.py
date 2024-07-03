@@ -3,19 +3,27 @@ import numpy as np
 import pygame
 import GameTools
 import cv2
+import GameObject
 from GameTools import Vector2, Vector3
 
 class Camera:   
     
-    def __init__(self, world, position, resolution):    
+    def __init__(self, onto, resolution):    
         
-        self.world = world
+        if isinstance(onto, GameObject.GameObject):
+            self.gameObject = onto
+            self.world = onto.world
+        else:
+            self.gameObject = None
+            self.world = onto
+            
         self.resolution = resolution
-        self.position = position
+        self.position = Vector3(0,10,0)
         self.forward = Vector3(0,-1,0)        
         self.aspectRatio = resolution[1]/resolution[0]
         self.HFOV = 60     
         self.height2HalfWidthRatio = -math.tan(self.HFOV/2)
+        self.zoom = 90
         #x1, y1, x2, y2
         self.shotBounds = self.CalcShotBounds()
         self.pixInTile = self.resolution[0]/(self.shotBounds[2]-self.shotBounds[0])
@@ -51,14 +59,18 @@ class Camera:
                         # pass
 
     def MakeTileMap(self):
-        self.requiredTileBounds = self.shotBounds
-        requiredChunkBounds = [int(self.requiredTileBounds[0]/32) - 1, int(self.requiredTileBounds[1]/32) - 1, -int(self.requiredTileBounds[0]/32) + 1, -int(self.requiredTileBounds[1]/32) + 1]
-        tileMap = self.terrain.BuildTileMap(requiredChunkBounds)
+        
+        tileMap = self.terrain.BuildTileMap(self.shotBounds)
         
         return tileMap
         
 
     def GetShot(self):
+    
+        if self.gameObject is not None:
+            self.position.x = self.gameObject.position.x
+            self.position.z = self.gameObject.position.z
+            
         terrainShot = self.MakeTerrainShot()
         objectShot = self.MakeObjectShot(terrainShot)
         return objectShot
@@ -68,15 +80,15 @@ class Camera:
         tileMap = self.MakeTileMap()
         tileMapX, tileMapY = tileMap.width, tileMap.height
         wX,wY = self.boundsHalfWidth, self.boundsHalfWidth*self.aspectRatio
-        camMapRelPos = tileMap.origin - self.position
+        camMapRelPos = self.position - tileMap.origin
         
         #camera vision is defined by the width of the shot from the center of the current tile map, however the camera will not always be at the origin of the tile map
         # so we add the relative position of the camera from the position in space of the map to get our vision. 1 tile has a width of 1 unit in real space
-        x1, x2, y1, y2 = [int(tileMapX/2 -wX - camMapRelPos.x), int(tileMapX/2 + wX + camMapRelPos.x), int(tileMapY/2 - wY - camMapRelPos.z), int(tileMapY/2 + wY + camMapRelPos.z)]
+        x1, x2, y1, y2 = [int(tileMapX/2 -wX + camMapRelPos.x), int(tileMapX/2 + wX + camMapRelPos.x), int(tileMapY/2 - wY + camMapRelPos.z), int(tileMapY/2 + wY + camMapRelPos.z)]
         
         visionMap = tileMap.map[x1:x2, y1:y2]
         
-        #print(x1, x2, y1, y2, tileMapX, tileMapY, camMapRelPos)
+        #print(x1, x2, y1, y2, tileMapX, tileMapY, camMapRelPos, tileMap.origin)
         
         resize = cv2.resize(visionMap, (self.resolution[1], self.resolution[0]), interpolation=cv2.INTER_NEAREST)
         vision = GameTools.ArrayToSurf(resize)
@@ -104,6 +116,8 @@ class Camera:
             
             terrainShot.blit(spriteImg, [xPos - spriteSizeX*scaleFactor/2, zPos - spriteSizeY*scaleFactor/2])
             
+            #print(f"blit {gameObject.name} sprite at location {xPos} {zPos}")
+            
         return terrainShot
 
     def CalcShotBounds(self):
@@ -111,18 +125,23 @@ class Camera:
         self.boundsHalfWidth = self.height2HalfWidthRatio*self.position.y
         return [self.position.x - self.boundsHalfWidth, self.position.z - self.boundsHalfWidth * self.aspectRatio, self.position.x + self.boundsHalfWidth, self.position.z + self.boundsHalfWidth * self.aspectRatio ]
         
-    def Pan(x,z):    
+    def Pan(self,x,z):    
 
-        camera.position += Vector3(x, 0, z)*self.position.y
+        self.position += Vector3(x, 0, -z)*self.position.y
         self.shotBounds = self.CalcShotBounds()
+        #print(self.shotBounds)
         
     def Zoom(self, y):
     
         zoomAmount = y * (self.position.y)/50
     
         self.position += Vector3(0,zoomAmount,0)
+        
         if self.position.y<=0:
             self.position.y = 0.1
+        if self.position.y>100:
+            self.position.y = 100
+            
         self.height2HalfWidthRatio = -math.tan(self.HFOV/2)
         self.shotBounds = self.CalcShotBounds()
         self.pixInTile = self.resolution[0]/(self.shotBounds[2]-self.shotBounds[0])

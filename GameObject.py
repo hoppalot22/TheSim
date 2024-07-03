@@ -116,7 +116,7 @@ class GameObject:
         
         self.RequestDraw(pygame.draw.circle, [(int(255*(1-friendliness/1000)),int(255*friendliness/1000),0,64), Vector2(self.position.x, self.position.z), volume])
         
-        for gameObject in self.parent.gameObjectList:
+        for gameObject in self.world.gameObjectList:
             relDist = Vector3.Mag(self.position - gameObject.position)
             if ((relDist) <= volume) and (gameObject is not self):
                 signal.properties["relVolume"] = volume - relDist
@@ -129,7 +129,7 @@ class GameObject:
         pass
     
     def RequestDraw(self, drawFunc, params):
-        self.parent.parent.HandleDraw(drawFunc, params)
+        self.world.parent.HandleDraw(drawFunc, params)
     
     def __repr__(self):
         return f"id: {self.id}, name: {self.name}"

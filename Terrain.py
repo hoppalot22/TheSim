@@ -26,9 +26,12 @@ class Terrain:
         self.chunkMap[x][y] = Chunk([x,y])
         #print("Added chunks")
         
-    def BuildTileMap(self, chunkBounds):
+    def BuildTileMap(self, shotBounds):
 
-        origin = Vector3((chunkBounds[2] + chunkBounds[0])/2, 0, (chunkBounds[3] + chunkBounds[1])/2)
+        #print(chunkBounds)
+        chunkBounds = [int(shotBounds[0]/32) - 2, int(shotBounds[1]/32) - 2, int(shotBounds[2]/32) + 2, int(shotBounds[3]/32) + 2]
+        
+        origin = Vector3((chunkBounds[2] + chunkBounds[0])*16, 0, (chunkBounds[3] + chunkBounds[1])*16)
         
         xRange, yRange = chunkBounds[2] - chunkBounds[0], chunkBounds[3] - chunkBounds[1]
         

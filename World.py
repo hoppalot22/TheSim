@@ -27,7 +27,7 @@ class World:
 
     def InstantiateGameObject(self, gameObject, position = Vector3(0,0,0), forward = Vector3(1,0,0)):
         self.gameObjectList.append(gameObject)
-        gameObject.parent = self
+        gameObject.world = self
         
         self.GenObjectID(gameObject)
         
