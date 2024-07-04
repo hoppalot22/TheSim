@@ -8,6 +8,7 @@ import Renderer
 import Camera
 import World
 import GameTools
+import time 
 from GameTools import Vector2, Vector3
 
 class Game:
@@ -27,6 +28,8 @@ class Game:
         
         self.worlds = []
         self.currentWorld = None
+        self.doubleClickActive = 0
+        self.doubleClickWindow = 200
         self.InitSim()
 
 
@@ -41,7 +44,8 @@ class Game:
     def Update(self):
         #os.system('cls')
         self.HandleEvents()
-        self.HandlePressed()    
+        self.HandlePressed()
+        self.Time()
         for world in self.worlds:
             world.Update()       
         
@@ -59,10 +63,26 @@ class Game:
 
     def MotionHandler(self, event):
         self.renderer.MotionHandler(event)
-     
+    
+    def Time(self):
+        #print(self.doubleClickActive)
+        if not (self.doubleClickActive == 0):
+            if abs(self.doubleClickActive)<self.doubleClickWindow:
+                self.doubleClickActive = 0
+            else:
+                self.doubleClickActive -= 100*self.doubleClickActive/abs(self.doubleClickActive)
+    
 
-    def HandlePrimaryDown(self):
-        pass
+    def HandlePrimaryDoubleDown(self, event):
+        self.renderer.HandlePrimaryDoubleDown(event)
+        self.doubleClickActive = -500
+        
+    def HandlePrimaryDown(self, event):
+        self.renderer.HandlePrimaryDown(event)
+        if self.doubleClickActive>0:
+            self.HandlePrimaryDoubleDown(event)
+        else:
+            self.doubleClickActive = self.doubleClickWindow + 1
 
     def HandleEvents(self):
         events = pygame.event.get()
@@ -82,7 +102,7 @@ class Game:
     def MouseDownHandler(self,event):
         #print(event)
         if event.button == 1:
-            self.renderer.HandlePrimaryDown(event)                   
+            self.HandlePrimaryDown(event)                   
         
         if event.button >= 4:
             self.renderer.ZoomSelectedCamera(event.button)    

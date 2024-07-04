@@ -2,6 +2,7 @@ import pygame
 import numpy as np
 import math
 import Camera
+import GameTools
 from GameTools import Vector2, Vector3
 
 
@@ -65,23 +66,27 @@ class Renderer:
 
     def HandlePrimaryDown(self, event):        
         for clickable in self.clickableObjects:
-            bounds = clickable.bounds
+            bounds = clickable.GetBounds()
             if (bounds[0] < event.pos[0] < bounds[2]) and (bounds[1] < event.pos[1] < bounds[3]):
                 self.Select(clickable)
                 break
      
+    def HandlePrimaryDoubleDown(self, event):
+        print("Double Click")
+    
+    
     def HandlePrimaryUp(self, event):
         pass
      
     def Select(self, clickable):
-        #print(f"Selected {clickable}")
+        print(f"Selected {clickable}")
         self.selectedClickable = clickable
     
             
     def MotionHandler(self,event):
         if pygame.mouse.get_pressed()[0]:
             if (self.selectedClickable is not None):
-                bounds = self.selectedClickable.bounds
+                bounds = self.selectedClickable.GetBounds()
                 if(bounds[0] < event.pos[0] < bounds[2]) and (bounds[1] < event.pos[1] < bounds[3]):
                     self.Move(self.selectedClickable, event.rel)
 
@@ -133,8 +138,35 @@ class Renderer:
             for gameObject in camera.world.gameObjectList:
                 camera.CanSee(gameObject)
     
-    def AddClickable(self, clickable, size, pos = Vector2(0,0)):
-        newClickable = Clickable(clickable, size)
+    
+    def FindSpace(self, clickable):
+        points =  [Vector2(0,0), Vector2(0 ,clickable.size[1]), Vector2(clickable.size[0], 0), Vector2(clickable.size[0], clickable.size[1])]
+        clickableRects = []
+        
+        for otherClickable in self.clickableObjects:
+            if not (otherClickable == clickable):
+                clickableRects.append([otherClickable.position, otherClickable.position + Vector2(otherClickable.size[0],otherClickable.size[1])])
+        
+        for col in range(self.w - clickable.size[0]):
+            for row in range(self.h - clickable.size[1]):
+                for point in points:
+                    for rect in clickableRects:
+                        if GameTools.PointInRect(point + Vector2(col,row), rect):
+                            break
+                    else:
+                        return Vector2(col,row)
+                    break
+        
+        return Vector2(0,0)
+    
+    def AddClickable(self, object, size, pos = Vector2(0,0)):
+    
+        newClickable = Clickable(object, size, pos)
+        freeSpot = self.FindSpace(newClickable)
+        print(freeSpot)
+        if freeSpot is not None:
+            newClickable.position = freeSpot        
+        
         self.clickableObjects.append(newClickable)
         self.selectedClickable = newClickable
 
@@ -154,7 +186,11 @@ class Clickable:
         size = self.size
         return [int(self.position.x), int(self.position.y) , int(self.position.x) + size[0], int(self.position.y) + size[1]]
         
-           
+    
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+
+    
 class GUI:
     
     def __init__(self):

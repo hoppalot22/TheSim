@@ -256,25 +256,10 @@ def GetInstanceSubStructure(instance, depth = 0):
         return structure, depth
     #print("\n")
     return structure, depth
-   
-def ObjectMemory(arg, memSum = 0):
-    memList = []
-    #print(arg)
-    if hasattr(arg, "__dict__"):
-        #print(arg.__dict__)
-        for k, v in vars(arg).items():
-            if (not(k == "parent")):
-                #print (k, v)
-                memSum += sys.getsizeof(v)
-                print(memSum)
-                memList.append([k, sys.getsizeof(v), v])
-                next = ObjectMemory(v, memSum)
-                memList.append(next[0])
-                memSum += next[1]
-        #print("\n")
-        return memList, memSum
-    #print("\n")
-    return memList, memSum
+
+def PointInRect(point, rect):
+    #print(point, rect, ((rect[0].x <= point.x <= rect[1].x)and(rect[0].y <= point.y <= rect[1].y)))
+    return ((rect[0].x <= point.x <= rect[1].x)and(rect[0].y <= point.y <= rect[1].y))
     
 def Main():
     
