@@ -18,8 +18,8 @@ class Renderer:
         self.selectedCamera = None
         self.renderables = []
         
-        self.clickableObjects = []
-        self.selectedClickable = None
+        self.renderObjects = []
+        self.selectedRenderObject = None
         
         self.centerOffset = Vector2(int(self.w/2), int(self.h/2))        
         self.drawQueue = []
@@ -46,10 +46,10 @@ class Renderer:
             pass    
     
     def RenderShots(self):        
-        for clickable in self.clickableObjects:
-            if isinstance(clickable.object, Camera.Camera):
-                shot = clickable.object.GetShot()
-                self.screen.blit(shot, (clickable.position.x, clickable.position.y))
+        for renderObject in self.renderObjects:
+            if isinstance(renderObject.object, Camera.Camera):
+                shot = renderObject.object.GetShot()
+                self.screen.blit(shot, (renderObject.position.x, renderObject.position.y))
 
     def RenderGUI(self):
         pass
@@ -65,92 +65,110 @@ class Renderer:
 
 
     def HandlePrimaryDown(self, event):        
-        for clickable in self.clickableObjects:
-            bounds = clickable.GetBounds()
+        for renderObject in self.renderObjects:
+            bounds = renderObject.GetBounds()
             if (bounds[0] < event.pos[0] < bounds[2]) and (bounds[1] < event.pos[1] < bounds[3]):
-                self.Select(clickable)
+                self.Select(renderObject)
                 break
      
     def HandlePrimaryDoubleDown(self, event):
         print("Double Click")
+        self.TileRenderObjects()
     
     
     def HandlePrimaryUp(self, event):
         pass
      
-    def Select(self, clickable):
-        print(f"Selected {clickable}")
-        self.selectedClickable = clickable
+    def Select(self, renderObject):
+        #print(f"Selected {renderObject}")
+        self.selectedRenderObject = renderObject
     
             
     def MotionHandler(self,event):
         if pygame.mouse.get_pressed()[0]:
-            if (self.selectedClickable is not None):
-                bounds = self.selectedClickable.GetBounds()
+            if (self.selectedRenderObject is not None):
+                bounds = self.selectedRenderObject.GetBounds()
                 if(bounds[0] < event.pos[0] < bounds[2]) and (bounds[1] < event.pos[1] < bounds[3]):
-                    self.Move(self.selectedClickable, event.rel)
+                    self.Move(self.selectedRenderObject, event.rel)
 
-    def Move(self, clickable, distVec):
+    def Move(self, renderObject, distVec):
 
-        if clickable is None:
+        if renderObject is None:
             return
             
         else:
-            clickable.position += Vector2(distVec[0], distVec[1])
+            renderObject.position += Vector2(distVec[0], distVec[1])
         
-        b = clickable.GetBounds()
+        b = renderObject.GetBounds()
         
         if b[0] < 0:
-            clickable.position.x = 0
+            renderObject.position.x = 0
             
         if b[1] < 0:
-            clickable.position.y = 0          
+            renderObject.position.y = 0          
             
         if b[2] > self.w:
-            clickable.position.x = self.w-clickable.size[0]
+            renderObject.position.x = self.w-renderObject.size[0]
             
         if b[3] > self.h:
-            clickable.position.y = self.h-clickable.size[1]
+            renderObject.position.y = self.h-renderObject.size[1]
 
-        clickable.bounds = b
+        renderObject.bounds = b
 
     def PanSelectedCamera(self, key):
         if key in [pygame.K_w, pygame.K_UP]:
-            self.selectedClickable.object.Pan(0,1)        
+            self.selectedRenderObject.object.Pan(0,1)        
         if key in [pygame.K_s, pygame.K_DOWN]:
-            self.selectedClickable.object.Pan(0,-1)        
+            self.selectedRenderObject.object.Pan(0,-1)        
         if key in [pygame.K_a, pygame.K_LEFT]:
-            self.selectedClickable.object.Pan(-1,0)        
+            self.selectedRenderObject.object.Pan(-1,0)        
         if key in [pygame.K_d, pygame.K_RIGHT]:
-            self.selectedClickable.object.Pan(1,0)        
+            self.selectedRenderObject.object.Pan(1,0)        
 
 
         
 
     def ZoomSelectedCamera(self, amount):
         if amount%2 == 0:
-            self.selectedClickable.object.Zoom(-amount/2)
+            self.selectedRenderObject.object.Zoom(-amount/2)
         else:
-            self.selectedClickable.object.Zoom(amount/2)
+            self.selectedRenderObject.object.Zoom(amount/2)
     
     def UpdateObjectsInCams(self):
         for camera in self.cameras:
             for gameObject in camera.world.gameObjectList:
                 camera.CanSee(gameObject)
     
+    def TileRenderObjects(self):
+        positionList = []
+        currentPos = Vector2(0,0)
+        sortedObjects = sorted(self.renderObjects, key = lambda x:x.size[0])
+        lastW = sortedObjects[0].size[0]
+        for renderObject in sortedObjects:
+            if GameTools.PointInRect(renderObject.size + currentPos, [Vector2(0,0), Vector2(self.w, self.h)]):
+                renderObject.position = currentPos
+                currentPos += Vector2(0,renderObject.size.y)
+            elif GameTools.PointInRect(renderObject.size + Vector2(currentPos.x + lastW, 0), [Vector2(0,0), Vector2(self.w, self.h)]):
+                renderObject.position = Vector2(currentPos.x + lastW, 0)
+                lastW = renderObject.size.x
+                currentPos = renderObject.position + Vector2(0,renderObject.size.y)
+            else:
+                renderObject.position = Vector2(0,0)
+            
+        
     
-    def FindSpace(self, clickable):
-        points =  [Vector2(0,0), Vector2(0 ,clickable.size[1]), Vector2(clickable.size[0], 0), Vector2(clickable.size[0], clickable.size[1])]
-        clickableRects = []
+    def FindSpace(self, renderObject):
+        points =  [Vector2(0,0), Vector2(0 ,renderObject.size[1]), Vector2(renderObject.size[0], 0), Vector2(renderObject.size[0], renderObject.size[1])]
+        renderObjectRects = []
         
-        for otherClickable in self.clickableObjects:
-            if not (otherClickable == clickable):
-                clickableRects.append([otherClickable.position, otherClickable.position + Vector2(otherClickable.size[0],otherClickable.size[1])])
+        for otherRenderObject in self.renderObjects:
+            if not (otherRenderObject == renderObject):
+                renderObjectRects.append([otherRenderObject.position, otherRenderObject.position + Vector2(otherRenderObject.size[0],otherRenderObject.size[1])])
         
-        for col in range(self.w - clickable.size[0]):
-            for row in range(self.h - clickable.size[1]):
+        for col in range(self.w - renderObject.size[0]):
+            for row in range(self.h - renderObject.size[1]):
                 for point in points:
-                    for rect in clickableRects:
+                    for rect in renderObjectRects:
                         if GameTools.PointInRect(point + Vector2(col,row), rect):
                             break
                     else:
@@ -159,32 +177,33 @@ class Renderer:
         
         return Vector2(0,0)
     
-    def AddClickable(self, object, size, pos = Vector2(0,0)):
+    def AddRenderObject(self, object, size, pos = Vector2(0,0)):
     
-        newClickable = Clickable(object, size, pos)
-        freeSpot = self.FindSpace(newClickable)
-        print(freeSpot)
+        newRenderObject = RenderObject(object, size, pos)
+        freeSpot = self.FindSpace(newRenderObject)
+        #print(freeSpot)
         if freeSpot is not None:
-            newClickable.position = freeSpot        
+            newRenderObject.position = freeSpot        
         
-        self.clickableObjects.append(newClickable)
-        self.selectedClickable = newClickable
+        self.renderObjects.append(newRenderObject)
+        self.selectedRenderObject = newRenderObject
 
 
-class Clickable:
+class RenderObject:
     
     def __init__(self, object, size, pos = Vector2(0,0)):
     
         self.object = object
         self.position = pos
-        self.size = size
         if hasattr(object, "size"):
             size = object.size
+        self.size = Vector2(size[0], size[1])
         self.bounds = self.GetBounds()
         
     def GetBounds(self):
         size = self.size
-        return [int(self.position.x), int(self.position.y) , int(self.position.x) + size[0], int(self.position.y) + size[1]]
+        self.bounds = [int(self.position.x), int(self.position.y) , int(self.position.x) + size[0], int(self.position.y) + size[1]]
+        return self.bounds
         
     
     def __eq__(self, other):

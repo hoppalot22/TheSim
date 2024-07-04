@@ -79,7 +79,7 @@ class Camera:
         
         tileMap = self.MakeTileMap()
         tileMapX, tileMapY = tileMap.width, tileMap.height
-        wX,wY = self.boundsHalfWidth, self.boundsHalfWidth*self.aspectRatio
+        wX,wY = [max(x,1) for x in [self.boundsHalfWidth, self.boundsHalfWidth*self.aspectRatio]]
         camMapRelPos = self.position - tileMap.origin
         
         #camera vision is defined by the width of the shot from the center of the current tile map, however the camera will not always be at the origin of the tile map
@@ -89,8 +89,13 @@ class Camera:
         visionMap = tileMap.map[x1:x2, y1:y2]
         
         #print(x1, x2, y1, y2, tileMapX, tileMapY, camMapRelPos, tileMap.origin)
-        
-        resize = cv2.resize(visionMap, (self.resolution[1], self.resolution[0]), interpolation=cv2.INTER_NEAREST)
+        try:
+            resize = cv2.resize(visionMap, (self.resolution[1], self.resolution[0]), interpolation=cv2.INTER_NEAREST)
+        except Exception as e:
+            print(e,"\n",f"tileMapX: {tileMapX}, tileMapY: {tileMapY}, wX: {wX}, wY: {wY}, camMapRelPos: {camMapRelPos} x1: {x1} x2: {x2} y1: {y1} y2: {y2}")
+            visionMap = tileMap.map[-4:4, -4:4]
+            resize = cv2.resize(visionMap, (self.resolution[1], self.resolution[0]), interpolation=cv2.INTER_NEAREST)
+            
         vision = GameTools.ArrayToSurf(resize)
             
         return vision
@@ -137,8 +142,8 @@ class Camera:
     
         self.position += Vector3(0,zoomAmount,0)
         
-        if self.position.y<=0:
-            self.position.y = 0.1
+        if self.position.y<=.1:
+            self.position.y = .1
         if self.position.y>100:
             self.position.y = 100
             

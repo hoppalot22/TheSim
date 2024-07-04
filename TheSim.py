@@ -168,7 +168,7 @@ class Game:
     def AddCamera(self, onto, resolution = [1280, 720]):
         newCam = Camera.Camera(onto, resolution)        
         self.renderer.selectedCamera = newCam
-        self.renderer.AddClickable(newCam, resolution)
+        self.renderer.AddRenderObject(newCam, resolution)
         self.renderer.cameras.append(newCam)
 
 def Main():
