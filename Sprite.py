@@ -20,7 +20,7 @@ class Sprite():
     
     
     def Rotate(self, angle):
-        self.img = pygame.transform.rotate(self.baseImg, angle)
+        self.img = pygame.transform.rotate(self.baseImg, angle*180/math.pi)
     
     @classmethod
     def Square(cls, size = 10, colour = [255,255,255,255], forwardArrow = True):

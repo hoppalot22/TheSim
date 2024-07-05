@@ -80,7 +80,7 @@ class Camera(Renderer.RenderObject):
         
         visionMap = tileMap.map[x1:x2, z1:z2]
         
-        #print(x1, x2, z1, z2, tileMapX, tileMapY, relPos, tileMap.origin)
+        #print(x1, x2, z1, z2)
 
         resize = cv2.resize(visionMap, (self.resolution[1], self.resolution[0]), interpolation=cv2.INTER_NEAREST)
         vision = GameTools.ArrayToSurf(resize)

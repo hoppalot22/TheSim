@@ -155,6 +155,7 @@ class Animal(GameObject.GameObject):
         pass
         
     def UpdateSprite(self):
+        #print(self.angle, self.angle*180/math.pi)
         self.sprite.Rotate(self.angle)
         
 class Cat(Animal):

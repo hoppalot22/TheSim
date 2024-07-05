@@ -14,11 +14,13 @@ class Renderer:
         self.gui = GUI()
         
         self.renderObjects = []
+        self.dormantRenderObjects = []
         self.selectedRenderObject = None
         self.fullScreenObject = None
+        self.highLightSurf = None
         
         self.centerOffset = Vector2(int(self.w/2), int(self.h/2))        
-        self.drawQueue = []
+        self.drawables = []
     
     def Update(self):        
 
@@ -43,10 +45,11 @@ class Renderer:
                 self.screen.blit(disp, (renderObject.rPosition.x, renderObject.rPosition.y))
         else:
             disp = self.fullScreenObject[0].display
-            self.screen.blit(shot, (0, 0))
+            self.screen.blit(disp, (0, 0))
 
     def RenderDrawables(self):
-        for drawable in self.drawQueue:
+    
+        for drawable in self.drawables:
             drawable[0](self.screen, *drawable[1])     
     
     def RenderGUI(self):
@@ -60,6 +63,8 @@ class Renderer:
     def UpdateDisplays(self):
         for renderObject in self.renderObjects:
             renderObject.UpdateDisplay()
+        if self.selectedRenderObject is not None:
+            self.selectedRenderObject.display.blit(self.highLightSurf, (0,0))
 
 
     def HandlePrimaryDown(self, event):        
@@ -79,7 +84,8 @@ class Renderer:
         
     
     def HandleSecondaryDown(self, event):
-        self.ToggleFullScreen(self.selectedRenderObject)
+        if self.selectedRenderObject is not None:
+            self.ToggleFullScreen(self.selectedRenderObject)
     
     def MotionHandler(self,event):
         if pygame.mouse.get_pressed()[0]:
@@ -92,15 +98,40 @@ class Renderer:
     def Select(self, renderObject):
         #print(f"Selected {renderObject}")
         self.selectedRenderObject = renderObject
+        self.HighLightSelected()
     
-    def ToggleFullScreen(self, renderObject):
-        if self.fullScreenObject == None:
-            origRes = renderObject.object.resolution
+    def HighLightSelected(self):
+        if (self.selectedRenderObject is not None):
+            thickness = 4
+            renderObject = self.selectedRenderObject
+            w,h = renderObject.resolution
+            #print(w,h)
+            highLightColour = renderObject.display.copy()
+            highLightColour.fill('red')
+            highLightArray = pygame.PixelArray(highLightColour)
+            highLightArray[thickness:w-thickness, thickness: h-thickness] = (0,0,0,0)
+            self.highLightSurf = highLightArray.make_surface()
+    
+    def ToggleFullScreen(self, renderObject):        
+        
+        if self.fullScreenObject == None:        
+            for _renderObject in self.renderObjects:
+                if not(renderObject == _renderObject):
+                    self.dormantRenderObjects.append(_renderObject)
+            self.renderObjects = [renderObject]
+            origRes = renderObject.resolution
             self.fullScreenObject = [renderObject, origRes]
-            renderObject.object.resolution = [self.w, self.h]
+            renderObject.resolution = [self.w, self.h]         
+            
         else:
-            self.fullScreenObject[0].object.resolution = self.fullScreenObject[1]
+            self.fullScreenObject[0].resolution = self.fullScreenObject[1]
             self.fullScreenObject = None
+            for _renderObject in self.dormantRenderObjects:
+                self.AddRenderObject(_renderObject)
+            self.dormantRenderObjects = []            
+        renderObject.UpdateDisplay()
+        self.HighLightSelected()
+        
 
     def Move(self, renderObject, distVec):
 
@@ -124,7 +155,7 @@ class Renderer:
         if bounds[3] > self.h:
             renderObject.rPosition.y = self.h-renderObject.resolution[1]
 
-        renderObject.bounds = b
+        renderObject.bounds = bounds
 
     def PanSelectedCamera(self, key):
         if self.selectedRenderObject is not None:
@@ -148,14 +179,14 @@ class Renderer:
     
     def TileRenderObjects(self):
         currentPos = Vector2(0,0)
-        sortedObjects = sorted(self.renderObjects, key = lambda x:x.resolution[0])
-        self.selectedRenderObject = sortedObjects[0]
+        sortedObjects = sorted(self.renderObjects, key = lambda x:x.resolution[0])        
+        self.Select(sortedObjects[0])
         topW = sortedObjects[0].resolution[0]
         for renderObject in sortedObjects:
-            if GameTools.PointInRect(renderObject.resolution + currentPos, [Vector2(0,0), Vector2(self.w, self.h)]):
+            if GameTools.PointInRect(renderObject.resolution + currentPos - Vector2(1,1), [Vector2(0,0), Vector2(self.w, self.h)]):
                 renderObject.rPosition = currentPos
                 currentPos += Vector2(0,renderObject.resolution.y)
-            elif GameTools.PointInRect(renderObject.resolution + Vector2(currentPos.x + topW, 0), [Vector2(0,0), Vector2(self.w, self.h)]):
+            elif GameTools.PointInRect(renderObject.resolution - Vector2(1,1) + Vector2(currentPos.x + topW, 0), [Vector2(0,0), Vector2(self.w, self.h)]):
                 renderObject.rPosition = Vector2(currentPos.x + topW, 0)
                 topW = renderObject.resolution.x
                 currentPos = renderObject.rPosition + Vector2(0,renderObject.resolution.y)
@@ -184,9 +215,11 @@ class Renderer:
     
     def AddRenderObject(self, renderObject):
     
-        freeSpot = self.FindSpace(renderObject) 
-        renderObject.rPosition = freeSpot if freeSpot is not None else Vecto2(0,0)
+        renderObject.UpdateDisplay()
+        #freeSpot = self.FindSpace(renderObject) 
+        #renderObject.rPosition = freeSpot if freeSpot is not None else Vector2(0,0)
         self.renderObjects.append(renderObject)
+        self.TileRenderObjects()
 
 
 class RenderObject:

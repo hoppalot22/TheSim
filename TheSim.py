@@ -139,7 +139,7 @@ class Game:
 
     def InitialConditions(self):
         self.myWorld = World.World(name = "Heaven")
-        self.AddCamera(self.myWorld, [int(1280/2),int(720/2)])
+        self.AddCamera(self.myWorld, Vector2(int(1280/2),int(720/2)))
         
         self.myCat = Animal.Cat(breed = "Black")
         self.myCat.name = "Charles"
@@ -152,8 +152,8 @@ class Game:
         self.myWorld.InstantiateGameObject(self.myCat)
         self.myWorld.InstantiateGameObject(self.myDog)
         
-        self.AddCamera(self.myCat, resolution = [int(1280/2),int(720/2)])
-        self.AddCamera(self.myDog, resolution = [int(1280/2),int(720/2)])
+        self.AddCamera(self.myCat, resolution = Vector2(int(1280/2),int(720/2)))
+        self.AddCamera(self.myDog, resolution = Vector2(int(1280/2),int(720/2)))
         
         self.AddWorld(self.myWorld)
         
@@ -163,9 +163,9 @@ class Game:
         self.currentWorld = world
         
     def HandleDrawRequest(self, drawFunc, params):          
-        self.renderer.drawQueue.append([drawFunc, params])
+        self.renderer.drawables.append([drawFunc, params])
     
-    def AddCamera(self, onto, resolution = [1280, 720]):
+    def AddCamera(self, onto, resolution = Vector2(1280, 720)):
         camera = Camera.Camera(self.renderer, onto, resolution)
         label = Renderer.RenderObjectLabel(f"{onto.name} cam", position = Vector2(20,20), backGround = "black")
         label.ChangeFont(None, 24)

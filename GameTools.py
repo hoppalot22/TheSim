@@ -6,8 +6,8 @@ import math
 class Vector2:
     
     def __init__(self,x,y):
-        self.x = float(x)
-        self.y = float(y)
+        self.x = x
+        self.y = y
         
     def __repr__(self):
         return f"Vec2 {[self.x, self.y]}"
