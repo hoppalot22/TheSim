@@ -114,7 +114,7 @@ class GameObject:
         "onomat": onomat,
         }
         
-        self.RequestDraw(pygame.draw.circle, [(int(255*(1-friendliness/1000)),int(255*friendliness/1000),0,64), Vector2(self.position.x, self.position.z), volume])
+        self.RequestDraw(pygame.draw.circle, [(int(255*(1-friendliness/1000)),int(255*friendliness/1000),0,64), [*Vector2(self.position.x, self.position.z)], volume])
         
         for gameObject in self.world.gameObjectList:
             relDist = Vector3.Mag(self.position - gameObject.position)
@@ -129,7 +129,7 @@ class GameObject:
         pass
     
     def RequestDraw(self, drawFunc, params):
-        self.world.parent.HandleDraw(drawFunc, params)
+        self.world.parent.HandleDrawRequest(drawFunc, params)
     
     def __repr__(self):
         return f"id: {self.id}, name: {self.name}"

@@ -9,22 +9,23 @@ class Vector2:
         self.x = float(x)
         self.y = float(y)
         
-        self.vecList = [x,y]
-
-    def SumProduct(self, vec2):
-        assert(type(vec2) == Vector2)
-        return self.x*vec2.x + self.y*vec2.y
-        
     def __repr__(self):
-        return str([self.x, self.y])
+        return f"Vec2 {[self.x, self.y]}"
+        
+    def __iter__(self):
+        return iter([self.x, self.y])
+        
+    def __getitem__(self,i):
+        return [self.x, self.y][i]
         
     def DistTo(self, other):
         assert(type(other) == Vector2)
         diff = other-self
         return math.sqrt(diff.x**2 + diff.y**2)
-        
-    def __getitem__(self,i):
-        return self.vecList[i]
+    
+    def SumProduct(self, vec2):
+        assert(type(vec2) == Vector2)
+        return self.x*vec2.x + self.y*vec2.y
         
     @classmethod
     def Mag(cls, vec):
@@ -114,22 +115,27 @@ class Vector3:
         self.y = float(y)
         self.z = float(z)
         
-        self.vecList = [x,y,z]
+    def __repr__(self):
+        return f"Vec3 {[self.x, self.y, self.z]}"
+        
 
+    def __getitem__(self,i):
+        return [self.x, self.y, self.z][i]
+    
+    def __iter__(self):
+        return iter([self.x, self.y, self.z])
+       
+    
+    
     def DotProduct(self, vec3):
         assert(type(vec3) == Vector3)
         return self.x*vec3.x + self.y*vec3.y + self.z*vec3.z
-        
-    def __repr__(self):
-        return str([self.x, self.y, self.z])
-        
+    
+    
     def DistTo(self, other):
         assert(type(other) == Vector3)
         diff = other-self
         return math.sqrt(diff.x**2 + diff.y**2 + diff.z**2)
-    
-    def __getitem__(self,i):
-        return self.vecList[i]
     
     def Mag(vec):
         assert(type(vec) == Vector3)
@@ -259,7 +265,7 @@ def GetInstanceSubStructure(instance, depth = 0):
 
 def PointInRect(point, rect):
     #print(point, rect, ((rect[0].x <= point.x <= rect[1].x)and(rect[0].y <= point.y <= rect[1].y)))
-    return ((rect[0].x <= point.x <= rect[1].x)and(rect[0].y <= point.y <= rect[1].y))
+    return ((rect[0].x <= point.x < rect[1].x)and(rect[0].y <= point.y < rect[1].y))
     
 def Main():
     

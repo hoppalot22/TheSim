@@ -53,16 +53,7 @@ class Game:
         
         self.clock.tick(10)
 
-    def HandlePressed(self):
-        keyState = pygame.key.get_pressed()
-        mouseState = pygame.mouse.get_pressed()
-    
-        for key in self.moveKeys:
-            if keyState[key]:
-                self.renderer.PanSelectedCamera(key)
 
-    def MotionHandler(self, event):
-        self.renderer.MotionHandler(event)
     
     def Time(self):
         #print(self.doubleClickActive)
@@ -71,18 +62,7 @@ class Game:
                 self.doubleClickActive = 0
             else:
                 self.doubleClickActive -= 100*self.doubleClickActive/abs(self.doubleClickActive)
-    
 
-    def HandlePrimaryDoubleDown(self, event):
-        self.renderer.HandlePrimaryDoubleDown(event)
-        self.doubleClickActive = -500
-        
-    def HandlePrimaryDown(self, event):
-        self.renderer.HandlePrimaryDown(event)
-        if self.doubleClickActive>0:
-            self.HandlePrimaryDoubleDown(event)
-        else:
-            self.doubleClickActive = self.doubleClickWindow + 1
 
     def HandleEvents(self):
         events = pygame.event.get()
@@ -102,7 +82,10 @@ class Game:
     def MouseDownHandler(self,event):
         #print(event)
         if event.button == 1:
-            self.HandlePrimaryDown(event)                   
+            self.HandlePrimaryDown(event)  
+
+        if event.button == 3:
+            self.HandleSecondaryDown(event)
         
         if event.button >= 4:
             self.renderer.ZoomSelectedCamera(event.button)    
@@ -110,9 +93,33 @@ class Game:
     def MouseUpHandler(self,event):
         #print(event)
         if event.button == 1:
-            self.renderer.HandlePrimaryUp(event)                   
-        
+            self.renderer.HandlePrimaryUp(event)
 
+    def MotionHandler(self, event):
+        self.renderer.MotionHandler(event) 
+            
+        
+    def HandlePrimaryDoubleDown(self, event):
+        self.renderer.HandlePrimaryDoubleDown(event)
+        self.doubleClickActive = -500
+        
+    def HandlePrimaryDown(self, event):
+        self.renderer.HandlePrimaryDown(event)
+        if self.doubleClickActive>0:
+            self.HandlePrimaryDoubleDown(event)
+        else:
+            self.doubleClickActive = self.doubleClickWindow + 1
+    
+    def HandleSecondaryDown(self,event):
+        self.renderer.HandleSecondaryDown(event)
+
+    def HandlePressed(self):
+        keyState = pygame.key.get_pressed()
+        mouseState = pygame.mouse.get_pressed()
+    
+        for key in self.moveKeys:
+            if keyState[key]:
+                self.renderer.PanSelectedCamera(key)
 
 
     def KeyHandler(self, event):
@@ -124,8 +131,6 @@ class Game:
             self.renderer.PanSelectedCamera(event.key)
         
 
-
-
     def Start(self):
         while (self.running):
             self.Update()
@@ -133,7 +138,7 @@ class Game:
  
 
     def InitialConditions(self):
-        self.myWorld = World.World()
+        self.myWorld = World.World(name = "Heaven")
         self.AddCamera(self.myWorld, [int(1280/2),int(720/2)])
         
         self.myCat = Animal.Cat(breed = "Black")
@@ -154,22 +159,18 @@ class Game:
         
     def AddWorld(self, world):
         self.worlds.append(world)
-        world.parent = self
-        
+        world.parent = self        
         self.currentWorld = world
-        self.AddRenderables(world.gameObjectList)
         
-    def AddRenderables(self, renderables):
-        self.renderer.renderables.extend(renderables)
-        
-    def HandleDraw(self, drawFunc, params):          
+    def HandleDrawRequest(self, drawFunc, params):          
         self.renderer.drawQueue.append([drawFunc, params])
     
     def AddCamera(self, onto, resolution = [1280, 720]):
-        newCam = Camera.Camera(onto, resolution)        
-        self.renderer.selectedCamera = newCam
-        self.renderer.AddRenderObject(newCam, resolution)
-        self.renderer.cameras.append(newCam)
+        camera = Camera.Camera(self.renderer, onto, resolution)
+        label = Renderer.RenderObjectLabel(f"{onto.name} cam", position = Vector2(20,20), backGround = "black")
+        label.ChangeFont(None, 24)
+        camera.AddLabel(label)
+        self.renderer.AddRenderObject(camera)
 
 def Main():
     myGame = Game()

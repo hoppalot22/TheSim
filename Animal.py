@@ -279,13 +279,6 @@ class Dog(Animal):
             if random.randint(0,99)>=80:
                 self.SetSpeed(random.randint(20,self.maxSpeed)) 
 
-class Human(Animal):
-    def __init__(self, name = "John Smith"):
-        super().__init__()
-        
-        self.name = name.split(' ')
-        self.sprite = Sprite.Sprite().Square(size = 25, colour = [200,200,100,255])
-        self.maxSpeed = 1200
                 
 def Main():
     print(dir(Cat))

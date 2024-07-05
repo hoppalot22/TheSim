@@ -9,11 +9,14 @@ from GameTools import Vector2, Vector3
 
 class World:
     
-    def __init__(self):
+    def __init__(self, name = None):
+    
+        self.name = name
+        
         self.time = 0
         self.parent = None
         self.gameObjectList = []
-        self.IDcount = int(0)
+        self.IDcount = int(0)        
 
         self.terrain = Terrain.Terrain()
 
