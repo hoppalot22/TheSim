@@ -128,6 +128,12 @@ class GameObject:
     def Update(self):
         pass
     
+    def SetSprite(self, sprite):
+        self.sprite = sprite
+    
+    def GenerateSprite(self):
+        pass
+    
     def RequestDraw(self, drawFunc, params):
         self.world.parent.HandleDrawRequest(drawFunc, params)
     

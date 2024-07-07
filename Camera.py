@@ -78,7 +78,7 @@ class Camera(Renderer.RenderObject):
         z1 = int(mapZ/2 - wZ + relPos.z)
         z2 = int(mapZ/2 + wZ + relPos.z)
         
-        visionMap = tileMap.map[x1:x2, z1:z2]
+        visionMap = tileMap.map[x1:x2, z1:z2]        
         
         #print(x1, x2, z1, z2)
 
