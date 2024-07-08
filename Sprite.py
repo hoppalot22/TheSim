@@ -14,6 +14,7 @@ class Sprite():
         else:
             self.shape = [1,1]
         self.bounds = self.GetBounds()
+        self.namedSections = []
 
     def GetBounds(self):
         return [[-int(self.shape[0]/2)+self.offset[0],-int(self.shape[0]/2)+self.offset[1]], [int((self.shape[1]-1)/2)+self.offset[0], int((self.shape[1]-1)/2)+self.offset[1]]]
@@ -58,6 +59,11 @@ class Sprite():
         
         return cls(img = surf)
 
+class NamedSection:
+    def __init__(self, name, coords, colour = None):
+        self.name = name
+        self.colour = colour
+        self.coords = []
 
 def Main():
     mySquare = Sprite().Square()
