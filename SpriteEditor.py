@@ -26,17 +26,31 @@ class SpriteEditor:
         self.pixelMap = PixelMap(self, Vector2(16,16), Vector2(h,h))
         self.previewWindow = EditorObject(self, position = Vector2(720, 720-240), resolution = Vector2(240,240))
         self.previewWindow.colour = (255,255,255)
+        self.previewWindow.UpdateDisplay = lambda: None     
         self.buttons = self.MakeInitialButtons()
         self.palette = ColourPalette(self, resolution = Vector2(250, 400))       
         
         self.UpdateScreen()   
     
     def MakeInitialButtons(self):
-        buttons = [Button(self, Vector2(self.w-300, self.h-60), Vector2(200, 60), "Filler"), Button(self, Vector2(self.w-300, self.h-120),Vector2(200, 60), "TestSection")]
+        exportSpriteLambda = lambda x :self.previewWindow.MakeDisplay(pygame.transform.scale(Button.ExportSprite(x,self.pixelMap).img, [*Vector2(240,240)]))
+        makeNamedSectionLambda = lambda x: Button.MakeNamedSection(x,self.selected)
+        buttons = [Button(self, Vector2(self.w-300, self.h-60), Vector2(200, 60), exportSpriteLambda, text = "Export Sprite"), Button(self, Vector2(self.w-300, self.h-120),Vector2(200, 60), makeNamedSectionLambda, text = "Make Named Section")]
         return buttons
     
-    def Update(self):        
-        self.HandleEvents()        
+    def Update(self):
+        os.system("cls")
+        t = dict()
+        print(dir(t))
+        for child in self.children:
+            for subChild in child.GetChildren():
+                k = subChild.__class__.__name__
+                if k in t.keys():
+                    t[k] += 1
+                else:
+                    t[k] = 1
+        self.HandleEvents()
+        print(t)        
         
     def UpdateScreen(self):
         self.Render()
@@ -85,7 +99,7 @@ class SpriteEditor:
             bounds = child.GetBounds()
             if (bounds[0].x < event.pos[0] < bounds[1].x) and (bounds[0].y < event.pos[1] < bounds[1].y):
                 return self.Select(child, event)
-        print(top)
+        #print(top)
         
         if isinstance(top, Pixel):
             if not(event.type == pygame.MOUSEMOTION):
@@ -134,7 +148,7 @@ class SpriteEditor:
 
     def TogglePalette(self, position):
         if self.palette.hidden:
-            self.palette.tileColours = self.GetColours()
+            self.palette.extraTiles = self.GetColours()
             self.palette.hidden = False
             self.palette.position = position            
             self.children.append(self.palette)
@@ -164,7 +178,9 @@ class EditorObject:
         self.display = pygame.Surface([*self.resolution])      
         self.highLighted = False
         self.children = []
-        
+    
+    def MakeDisplay(self, surf):
+        self.display = surf
     
     def UpdateDisplay(self):
         disp = pygame.Surface([*self.resolution])
@@ -204,11 +220,11 @@ class EditorObject:
         return [Vector2(int(pos.x), int(pos.y)) , Vector2(int(pos.x) + resolution.x, int(pos.y) + resolution.y)]
         
     def GetChildren(self):
-        result = []
+        result = [self]
         for child in self.children:
             subChildren = child.GetChildren()
             if subChildren is not None:
-                result.extend(subchildren)
+                result.extend(subChildren)
         return result
     
     def __eq__(self, other):
@@ -227,8 +243,8 @@ class ColourPalette(EditorObject):
             bar = ColourBar(self, Vector2(self.halfRes + (self.wBar+self.gap)*i,10), i, resolution = Vector2(self.wBar, 255))
         self.colourPreview = EditorObject(self, Vector2(self.halfRes, 255 + 10 + self.gap), Vector2(self.halfRes - self.gap, 60))
         self.commonColours = [(0,0,0,255),(255,255,255,255), (100,100,100,100),(255,0,0,255),(0,255,0,255),(0,0,255,255),(255,255,0,255),(0,255,255,255),(255,0,255,255),(160,32,255,255),(160,128,96,255),(255,96,208,255),(96,255,128,255),(204,102,0,255),(0,204,204,255),(153,153,0,255),(0,0,102,255),(0,102,0,255)]
-        self.tileColours = []
-        self.tileList = self.TileList()        
+        self.extraTiles = []
+        self.tileList = []        
         self.UpdateDisplay()
      
     def UpdateDisplay(self): 
@@ -240,27 +256,26 @@ class ColourPalette(EditorObject):
         self.colourPreview.UpdateDisplay()
         for child in self.children:
             child.highLighted = False
-        self.tileList = self.TileList()     
+        self.UpdateTileList()    
         self.display = surf
     
-    def TileList(self):        
-        tileList = []
+    def UpdateTileList(self):        
         
-        for i, colour in enumerate(self.tileColours):
-            spacing = int((self.halfRes - self.gap)/4 - self.gap)
-            tile = EditorObject(self, Vector2(10 + i%4*spacing,10 + math.floor(i/4)*spacing), Vector2(spacing-self.gap, spacing - self.gap))
-            tile.colour = colour
-            tileList.append(tile)
-            tile.UpdateDisplay()      
+        for i, colour in enumerate(self.extraTiles):
+            if not(colour in [tile.colour for tile in self.tileList]):                
+                spacing = int((self.halfRes - self.gap)/4 - self.gap)
+                tile = EditorObject(self, Vector2(10 + i%4*spacing,10 + math.floor(i/4)*spacing), Vector2(spacing-self.gap, spacing - self.gap))
+                tile.colour = colour
+                self.tileList.append(tile)
+                tile.UpdateDisplay()      
             
         for i, colour in enumerate(self.commonColours):
-            spacing = int((self.halfRes - self.gap)/4 - self.gap)
-            tile = EditorObject(self, Vector2(10 + i%9*spacing, self.resolution[1] - self.gap - spacing - self.gap - math.floor(i/9)*spacing), Vector2(spacing-self.gap, spacing - self.gap))
-            tile.colour = colour
-            tileList.append(tile)
-            tile.UpdateDisplay()
-            
-        return tileList
+            if not(colour in [tile.colour for tile in self.tileList]):
+                spacing = int((self.halfRes - self.gap)/4 - self.gap)
+                tile = EditorObject(self, Vector2(10 + i%9*spacing, self.resolution[1] - self.gap - spacing - self.gap - math.floor(i/9)*spacing), Vector2(spacing-self.gap, spacing - self.gap))
+                tile.colour = colour
+                self.tileList.append(tile)
+                tile.UpdateDisplay()
 
     
 class ColourBar(EditorObject):
@@ -345,9 +360,9 @@ class Button(EditorObject):
         self.backGround = backGround
         self.bounds = self.GetBounds()
         self.text = text
-        self.textSize = 32
+        self.textSize = 24
         self.textColour = textColour
-        self.namedSection = []        
+        self.namedSections = []        
         self.UpdateDisplay()
     
     def UpdateDisplay(self):
@@ -356,16 +371,16 @@ class Button(EditorObject):
         surf.fill(self.backGround, rect = [[*Vector2(1,1)], [*(self.resolution - Vector2(2,2))]])
         font = pygame.font.SysFont(None, self.textSize)
         fontSize = Vector2(*font.size(self.text))
-        surf.blit(font.render(self.text, True, (0,0,0)), [*(self.resolution/2 - fontSize)])
+        surf.blit(font.render(self.text, True, (0,0,0)), [*(self.resolution/2 - fontSize/2)])
         self.display = surf
     
     def Clicked(self):
-        print("clicked button")
-        pass #do something        
+        self.command(self)      
         
     def ExportSprite(self, pixelMap):
-        spriteArray = np.zeros((len(pixelMap), len(pixelMap[0]), 3))
-        for i, col in enumerate(pixelMap):
+        map = pixelMap.map
+        spriteArray = np.zeros((len(map), len(map[0]), 3))
+        for i, col in enumerate(map):
             for j, pixel in enumerate(col):
                 spriteArray[i,j,:] = pixel.colour[0:3]
         img = pygame.surfarray.make_surface(spriteArray).convert_alpha()
