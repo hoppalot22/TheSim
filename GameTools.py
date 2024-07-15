@@ -2,6 +2,7 @@ from functools import singledispatchmethod
 import pygame
 import sys
 import math
+import os
 
 class Vector2:
     
@@ -266,20 +267,14 @@ def GetInstanceSubStructure(instance, depth = 0):
 def PointInRect(point, rect):
     #print(point, rect, ((rect[0].x <= point.x <= rect[1].x)and(rect[0].y <= point.y <= rect[1].y)))
     return ((rect[0].x <= point.x < rect[1].x)and(rect[0].y <= point.y < rect[1].y))
+
+
+    
+
     
 def Main():
-    
-    vec1 = Vector3(3,5, 12)
-    vec2 = Vector3(1,7, 4)
-    scalar = int(2)
-        
-    print(vec1 + vec2)
-    print(vec1 - vec2)
-    print(vec1 * vec2)
-    print(vec1 + scalar)
-    print(vec1 - scalar)
-    print(vec1 * scalar)
-    print(vec1.DotProduct(vec2))
+    pass
+
         
 if __name__ == "__main__":
     Main()

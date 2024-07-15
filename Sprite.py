@@ -2,6 +2,8 @@ from GameTools import Vector2, Vector3, PrintNpArray
 import math
 import numpy as np
 import pygame
+import pickle
+import os
 
 class Sprite():
 
@@ -65,12 +67,53 @@ class NamedSection:
         self.colour = colour
         self.coords = []
 
+def Sprite2Pickle(sprite, name = "sprite"):
+    array = pygame.surfarray.array3d(sprite.baseImg)
+    namedSections = sprite.namedSections
+    offset = sprite.offset
+    pickleDict =  {
+    "array" : array,
+    "namedSections" : namedSections,
+    "offset" : offset
+    }    
+    wdir = os.path.dirname(__file__)
+    num = 1
+    while(os.path.exists(f"{wdir}\\sprites\\{name}{num}.pickle")):
+        num+=1
+    savePath = f"{wdir}\\sprites\\{name}{num}.pickle"
+    
+    with open(savePath, "wb") as outfile:
+        pickle.dump(pickleDict, outfile)
+    
+def Pickle2Sprite(path):
+    with open(path, "rb") as file:
+        pickleDict = pickle.load(file)
+    surf = pygame.surfarray.make_surface(pickleDict["array"])
+    sprite = Sprite(img = surf)
+    sprite.offset = pickleDict["offset"]
+    sprite.namedSections = pickleDict["namedSections"]
+    print(sprite.baseImg)
+    return sprite
+
 def Main():
-    mySquare = Sprite().Square()
-    myRect = Sprite().Rect()
-    print(mySquare.img)
-    print(myRect.img)
-    #PrintNpArray(mySprite.img)
+
+
+    folder = r"C:\Users\alexm\OneDrive\Documents\python scripts\TheSim\sprites"
+    sprites = []
+    for file in os.listdir(folder):
+        if file.split(".")[-1] == "pickle":
+            sprites.append(Pickle2Sprite(f"{folder}\\{file}"))
+    pygame.init()
+    screen = pygame.display.set_mode((1280,720))
+    clock = pygame.time.Clock()
+    counter = 0
+    while True:
+        events = pygame.event.get()
+        screen.blit(pygame.transform.scale(sprites[counter%len(sprites)].img, [400,400]), [0,0])
+        pygame.display.flip()
+        clock.tick(2)
+        counter += 1
+    
 
 if __name__ == "__main__":
     Main()
