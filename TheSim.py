@@ -9,6 +9,7 @@ import Camera
 import World
 import GameTools
 import time 
+import Human
 from GameTools import Vector2, Vector3
 
 class Game:
@@ -141,19 +142,26 @@ class Game:
         self.myWorld = World.World(name = "Heaven")
         self.AddCamera(self.myWorld, Vector2(int(1280/2),int(720/2)))
         
-        self.myCat = Animal.Cat(breed = "Black")
+        self.myCat = Animal.Cat(breed = "Black", forward = Vector3(1,0,0))
         self.myCat.name = "Charles"
 
         
-        self.myDog = Animal.Dog(breed = "Great Dane")
+        self.myDog = Animal.Dog(breed = "Great Dane", forward = Vector3(1,0,0))
         self.myDog.name = "Rex"
+        
+        self.myHuman = Human.Human("Jason Bourne")
 
+        self.myDinosaur = Animal.Dinosaur(forward = Vector3(0,0,-1))
         
         self.myWorld.InstantiateGameObject(self.myCat)
         self.myWorld.InstantiateGameObject(self.myDog)
+        self.myWorld.InstantiateGameObject(self.myHuman)
+        self.myWorld.InstantiateGameObject(self.myDinosaur)
+        
         
         self.AddCamera(self.myCat, resolution = Vector2(int(1280/2),int(720/2)))
         self.AddCamera(self.myDog, resolution = Vector2(int(1280/2),int(720/2)))
+        self.AddCamera(self.myHuman, resolution = Vector2(int(1280/2),int(720/2)))
         
         self.AddWorld(self.myWorld)
         

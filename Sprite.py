@@ -5,7 +5,9 @@ import pygame
 import pickle
 import os
 
-class Sprite():
+class Sprite:
+
+    spriteFolder = r"C:\Users\alexm\OneDrive\Documents\python scripts\TheSim\sprites"
 
     def __init__(self, img = None):
         self.baseImg = img
@@ -62,14 +64,21 @@ class Sprite():
         return cls(img = surf)
 
 class NamedSection:
-    def __init__(self, name, coords, colour = None):
-        self.name = name
+    def __init__(self, parent, coords, name = "sprite", colour = None):
+        self.parent = parent
+        if name in [section.name for section in self.parent.namedSections]:
+            self.name = str(name + "_2")
+        else:
+            self.name = name
         self.colour = colour
-        self.coords = []
+        self.coords = coords
+        self.parent.namedSections.append(self)
 
 def Sprite2Pickle(sprite, name = "sprite"):
     array = pygame.surfarray.array3d(sprite.baseImg)
     namedSections = sprite.namedSections
+    for section in namedSections:
+        section.parent = None
     offset = sprite.offset
     pickleDict =  {
     "array" : array,
@@ -89,10 +98,12 @@ def Pickle2Sprite(path):
     with open(path, "rb") as file:
         pickleDict = pickle.load(file)
     surf = pygame.surfarray.make_surface(pickleDict["array"])
+    surf.set_colorkey((1,1,1))
     sprite = Sprite(img = surf)
     sprite.offset = pickleDict["offset"]
     sprite.namedSections = pickleDict["namedSections"]
-    print(sprite.baseImg)
+    for section in sprite.namedSections:
+        section.parent = sprite
     return sprite
 
 def Main():
@@ -100,16 +111,18 @@ def Main():
 
     folder = r"C:\Users\alexm\OneDrive\Documents\python scripts\TheSim\sprites"
     sprites = []
-    for file in os.listdir(folder):
-        if file.split(".")[-1] == "pickle":
-            sprites.append(Pickle2Sprite(f"{folder}\\{file}"))
+
     pygame.init()
     screen = pygame.display.set_mode((1280,720))
     clock = pygame.time.Clock()
     counter = 0
+    for file in os.listdir(folder):
+        if file.split(".")[-1] == "pickle":
+            sprites.append(Pickle2Sprite(f"{folder}\\{file}"))
     while True:
         events = pygame.event.get()
-        screen.blit(pygame.transform.scale(sprites[counter%len(sprites)].img, [400,400]), [0,0])
+        screen.fill("grey")
+        screen.blit(pygame.transform.scale(sprites[counter%len(sprites)].img.convert_alpha(), [400,400]), [0,0])
         pygame.display.flip()
         clock.tick(2)
         counter += 1

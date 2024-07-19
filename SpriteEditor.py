@@ -31,7 +31,7 @@ class SpriteEditor:
         self.palette = ColourPalette(self, resolution = Vector2(250, 400))
 
         self.doubleClickActive = 0
-        self.doubleClickWindow = 200        
+        self.doubleClickWindow = 500        
         
         self.UpdateScreen()   
     
@@ -39,17 +39,25 @@ class SpriteEditor:
         exportSpriteButton = Button(self, Vector2(self.w-300, self.h-60), Vector2(200, 60), command = "", text = "Export Sprite")
         exportSpriteCommand = lambda: Button.ExportSprite(exportSpriteButton)
         exportSpriteButton.command = exportSpriteCommand
+        
         createNamedSectionButton = Button(self, Vector2(self.w-300, self.h-120),Vector2(200, 60), command = "", text = "Make Named Section")        
-        makeNamedSectionCommand = Button.MakeNamedSection
+        makeNamedSectionCommand = self.MakeNamedSection
         createNamedSectionButton.command = makeNamedSectionCommand
         
-        buttons = [exportSpriteButton, createNamedSectionButton]
+        nextNamedSection = Button(self, Vector2(self.w-300, self.h-180), Vector2(200, 60), command = self.NextNamed, text = "Cycle Named Sections")
+        nextNamedSection.counter = 0
+        
+        clearNamedSection = Button(self, Vector2(self.w-300, self.h-240), Vector2(200, 60), command = self.ClearNamed, text = "Clear Named Sections")
+        
+        clear = Button(self, Vector2(self.w-300, self.h-300), Vector2(200, 60), command = self.Clear, text = "Clear")
+        
+        buttons = [exportSpriteButton, createNamedSectionButton, nextNamedSection, clearNamedSection, clear]
         return buttons
     
     def Time(self):
         #print(self.doubleClickActive)
         if not (self.doubleClickActive == 0):
-            if abs(self.doubleClickActive)<self.doubleClickWindow:
+            if abs(self.doubleClickActive)<self.doubleClickWindow/10:
                 self.doubleClickActive = 0
             else:
                 self.doubleClickActive -= 100*self.doubleClickActive/abs(self.doubleClickActive)
@@ -84,7 +92,6 @@ class SpriteEditor:
         pygame.display.flip()      
       
     def HandleEvents(self):
-        
         for event in pygame.event.get():
             #print(event)
             if event.type == pygame.QUIT:
@@ -92,7 +99,9 @@ class SpriteEditor:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.running = False
-                    return           
+                    return
+                if event.key == pygame.K_DELETE:
+                    self.DeleteSelected()
             if event.type == pygame.MOUSEBUTTONDOWN:
 
                 if event.button == 1:
@@ -117,13 +126,15 @@ class SpriteEditor:
     def HandlePrimaryDoubleDown(self, event):
         print("Double Click")
         self.doubleClickActive = -500
-        pixels = []
-        for pixel in self.selectedPixels:        
-            pixels.extend(self.pixelMap.GetConnected(pixel))
-        self.selectedPixels = pixels
-        self.selected = pixels
-        for pixel in self.selectedPixels:
-            pixel.highLighted = True
+        selected = []
+        for col in self.pixelMap.map:
+            for pixel in col:
+                if pixel.selected:
+                    selected.append(pixel)
+        for pixel in selected:        
+            selected.extend(self.pixelMap.GetConnected(pixel))
+        for pixel in selected:
+            pixel.selected = True
 
     def HandleMiddleDown(self, event):
         self.UnSelectAll()
@@ -170,6 +181,12 @@ class SpriteEditor:
                     pixel.ChangeColour(self.palette.colour)            
         self.previewWindow.UpdateDisplay()
     
+    def DeleteSelected(self):
+        for col in self.pixelMap.map:
+            for pixel in col:
+                if pixel.selected:
+                    pixel.ChangeColour((1,1,1,0))
+    
     def UnSelectAll(self):
         for child in self.children:
             for subchild in child.GetChildren():
@@ -198,7 +215,38 @@ class SpriteEditor:
                         break
                 else:
                     colours.append(pixel.colour)
-        return colours   
+        return colours
+
+    def MakeNamedSection(self):
+        coords = []
+        colour = None
+        for col in self.pixelMap.map:
+            for pixel in col:
+                if pixel.selected:
+                    coords.append(pixel.coords)
+                if colour is None:
+                    colour = pixel.colour
+        print("made", coords)
+        section = Sprite.NamedSection(self.previewWindow.sprite, coords, colour = colour)
+        return section
+        
+
+    def NextNamed(self):
+        button = self.buttons[2]
+        self.UnSelectAll()
+        for coord in self.previewWindow.sprite.namedSections[button.counter%len(self.previewWindow.sprite.namedSections)].coords:
+            self.pixelMap.map[coord[0]][coord[1]].selected = True
+        button.counter += 1
+        
+    def ClearNamed(self):
+        for named in self.previewWindow.sprite.namedSections:
+            self.previewWindow.sprite.namedSections.remove(named)
+        print("Cleared Named Sections")
+        
+    def Clear(self):
+        for col in self.pixelMap.map:
+            for pixel in col:
+                pixel.colour = (1,1,1,255)
 
 class EditorObject:
     
@@ -319,8 +367,9 @@ class ColourPalette(EditorObject):
         for i, colour in enumerate(self.extraTiles):
             if not(colour in [tile.colour for tile in self.tileList]):                
                 spacing = int((self.halfRes - self.gap)/4 - self.gap)
-                tile = Button(self, Vector2(10 + i%4*spacing,10 + math.floor(i/4)*spacing), Vector2(spacing-self.gap, spacing - self.gap), command = self.parent.ChangePixelColours, text = "", backGround = colour)
+                tile = Button(self, Vector2(10 + i%4*spacing,10 + math.floor(i/4)*spacing), Vector2(spacing-self.gap, spacing - self.gap), command = "", text = "", backGround = colour)
                 tile.colour = colour
+                tile.command = tile.ChangePaletteColour
                 self.tileList.append(tile)
                 tile.UpdateDisplay()      
             
@@ -357,7 +406,7 @@ class ColourBar(EditorObject):
         self.intensity = 255 - (event.pos[1] - self.AbsPosition().y)
     
 class Pixel(EditorObject):
-    def __init__(self, parent, position, resolution = None, colour = (255,255,255,255), coords = None):
+    def __init__(self, parent, position, resolution = None, colour = (255,255,255,0), coords = None):
         super().__init__(parent, position = position, resolution = resolution)           
         self.colour = colour
         self.coords = coords
@@ -374,11 +423,12 @@ class Pixel(EditorObject):
         self.UpdateDisplay()
     
     def UpdateDisplay(self):
-        surf = pygame.Surface([*self.resolution])
+        surf = pygame.Surface([*self.resolution]).convert_alpha()
         surf.fill("black")
         pixArr = pygame.PixelArray(surf)
         pixArr[1:self.resolution[0]-1,1:self.resolution[1]-1] = tuple(self.colour)
         newSurf = pixArr.make_surface()
+        newSurf.set_colorkey((1,1,1))
         self.display = newSurf
         
 
@@ -395,7 +445,7 @@ class PixelMap(EditorObject):
         self.UpdateDisplay()
     
     def UpdateDisplay(self):
-        blankSurf = pygame.Surface([*self.resolution])
+        blankSurf = pygame.Surface([*self.resolution]).convert_alpha()
         blankSurf.fill((100,100,100))
         pixArr = pygame.PixelArray(blankSurf)
         pixArr[::2,:] = (120,120,120)
@@ -431,12 +481,13 @@ class PixelMap(EditorObject):
         y = coords[1]
         dirs = [[-1,0],[1,0],[0,-1],[0,1]]
         for i in range(4):
-            connectedPixel = self.map[x+dirs[i][0]][y+dirs[i][1]]
-            if connectedPixel in pixels or not (pixel.colour == connectedPixel.colour):
-                continue                
-            for pixel in self.GetConnected(connectedPixel, pixels):
-                pixels.add(pixel)
-        
+            if (0<=x+dirs[i][0]<self.size[0])and(0<=y+dirs[i][1]<self.size[1]):
+                connectedPixel = self.map[x+dirs[i][0]][y+dirs[i][1]]
+                if connectedPixel in pixels or not (pixel.colour == connectedPixel.colour):
+                    continue                
+                for pixel in self.GetConnected(connectedPixel, pixels):
+                    pixels.add(pixel)
+            
         return pixels
     
     
@@ -479,28 +530,25 @@ class Button(EditorObject):
         
     def ExportSprite(self, name = "sprite"):
         sprite = self.parent.previewWindow.sprite
+        print(sprite)
         Sprite.Sprite2Pickle(sprite)
             
     
     def ChangePaletteColour(self):
         self.parent.ChangePaletteColour(self.colour)
     
-    def MakeNamedSection(self, selected):
-        coords = []
-        colour = selected[0].colour
-        for pixel in selected:
-            coords.append(pixel.coords)
-        return Sprite.NamedSection(self.name, coords, colour = colour)        
+      
         
 class PreviewWindow(EditorObject):
     def __init__(self, parent, pixelMap, position = None, resolution = None):
         super().__init__(parent, position, resolution)
         print(self)
         self.pixelMap = pixelMap
-        self.sprite = None
+        self.sprite = Sprite.Sprite()
         
     def UpdateDisplay(self):
-        self.sprite = self.PreviewSprite()
+        self.sprite.img = self.PreviewSprite()
+        self.sprite.baseImg = self.sprite.img
         self.display = pygame.transform.scale(self.sprite.img, [240,240])  
     
     def Selected(self, event):
@@ -509,16 +557,18 @@ class PreviewWindow(EditorObject):
     
     def PreviewSprite(self):
         map = self.pixelMap.map
-        spriteArray = np.zeros((len(map), len(map[0]), 3))
+        spriteArray = np.zeros((len(map), len(map[0]), 3), dtype = np.uint32)
         for i, col in enumerate(map):
             for j, pixel in enumerate(col):
-                spriteArray[i,j,:] = pixel.colour[0:3]
-        img = pygame.surfarray.make_surface(spriteArray).convert_alpha()
-        sprite = Sprite.Sprite(img = img)
-        for section in self.parent.namedSections:
-            sprite.namedSections.append(section)
-        return sprite
+                if pixel.colour[3] == 0:                
+                    spriteArray[i,j,:] = (1,1,1)
+                else:
+                    spriteArray[i,j,:] = pixel.colour[0:3]
+        img = pygame.surfarray.make_surface(spriteArray)
+        img.set_colorkey((1,1,1))
+        return img
 
+ 
 
 
 def Main():

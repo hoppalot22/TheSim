@@ -67,9 +67,9 @@ class Goals:
 
 class Animal(GameObject.GameObject):
 
-    def __init__(self, health = 1000, maxSpeed = 1000, size = 1000, intelligence = 1000):
+    def __init__(self, health = 1000, maxSpeed = 1000, size = 1000, intelligence = 1000, forward = Vector3(0,0,1)):
     
-        super().__init__()
+        super().__init__(forward = forward)
         self.health = health
         self.maxSpeed = maxSpeed
         self.intelligence = intelligence
@@ -106,7 +106,7 @@ class Animal(GameObject.GameObject):
     
     def FaceDirection(self, vec):
         self.forward = Vector3.Norm(vec)
-        self.angle = math.atan2(self.forward.x, self.forward.z)-math.pi/2    
+        self.angle = math.atan2(self.forward.x, self.forward.z)
         
     def Meander(self, propensity):
         
@@ -123,6 +123,43 @@ class Animal(GameObject.GameObject):
         blackCross = np.array([[[(abs(i-j)<4 | abs(i-j)>w-4)*255 for z in range(3)] for i in range(w)] for j in range(h)])
         deathMark = pygame.surfarray.make_surface(whiteBG ).convert_alpha()
         self.sprite.img.blit(deathMark, (0,0))
+    
+    def Flee(self, gameObject):
+    
+        flee = self.Flee.__name__            
+        if flee not in self.activities.keys():
+            self.activities[flee] = dict()
+    
+        self.speed = self.maxSpeed
+        self.FaceDirection(self.position - gameObject.position)
+        
+        if (gameObject.position-self.position).Mag()>8:
+            self.activities[flee]["achieved"] = True
+        else:
+            if "time" not in self.activities[flee].keys():
+                self.activities[flee]["time"] = 1
+            else:
+                self.activities[flee]["time"] += 1
+        return self.activities[flee]
+    
+    def Chase(self, gameObject):
+        
+        chase = self.Chase.__name__
+        
+        if chase not in self.activities.keys():
+            self.activities[chase] = dict()
+        
+        self.speed = self.maxSpeed
+        self.FaceDirection(gameObject.position-self.position)
+        
+        if (gameObject.position-self.position).Mag()>5:
+            self.activities[chase]["achieved"] = False
+        else:
+            if "time" not in self.activities[chase].keys():
+                self.activities[chase]["time"] = 1
+            else:
+                self.activities[chase]["time"] += 1
+        return self.activities[chase]
     
     def Stop(self):
         self.speed = 0
@@ -156,15 +193,18 @@ class Animal(GameObject.GameObject):
         
     def UpdateSprite(self):
         #print(self.angle, self.angle*180/math.pi)
-        self.sprite.Rotate(self.angle)
+        offset = math.acos(self.initRotation.DotProduct(Vector3(0,0,1)))
+        #print(self, self.initRotation, offset)
+        self.sprite.Rotate(self.angle-offset)
         
 class Cat(Animal):
         
-        def __init__(self, breed = "Tabby", size = 300):       
-            super().__init__()
+        def __init__(self, breed = "Tabby", size = 300, forward = Vector3(0,0,1)):       
+            super().__init__(forward = forward)
             
             self.size = size
             self.breed = breed
+            self.sprite = Sprite.Pickle2Sprite(Sprite.Sprite.spriteFolder + "\\cat1.pickle")
         
         def SpecUpdate(self):
            self.Meow()
@@ -178,25 +218,6 @@ class Cat(Animal):
         def Meow(self):
             #self.Stop()
             self.EmitNoise(volume = 20, friendliness = 1000, onomat = "Meow")
-        
-        def Flee(self, gameObject):
-        
-            flee = self.Flee.__name__            
-            if flee not in self.activities.keys():
-                self.activities[flee] = dict()
-        
-            self.speed = self.maxSpeed
-            self.FaceDirection(self.position - gameObject.position)
-            
-            if (gameObject.position-self.position).Mag()>8:
-                self.activities[flee]["achieved"] = True
-            else:
-                if "time" not in self.activities[flee].keys():
-                    self.activities[flee]["time"] = 1
-                else:
-                    self.activities[flee]["time"] += 1
-            return self.activities[flee]
-        
         
         
         def NoiseHandler(self, signal):
@@ -219,16 +240,16 @@ class Cat(Animal):
                 
 class Dog(Animal):
         
-        def __init__(self, breed = "German Shepard", size = 500):
-            super().__init__()
+        def __init__(self, breed = "German Shepard", forward = Vector3(0,0,1), size = 500):
+            super().__init__(forward = forward)
             
             self.size = size
             self.breed = breed
             self.sprite = Sprite.Sprite().Square(size = 25, colour = [200,200,100,255])
             self.maxSpeed = 400
             
+            self.sprite = Sprite.Pickle2Sprite(Sprite.Sprite.spriteFolder + "\\dog.pickle")
             
-
         def SpecUpdate(self):
             self.Woof()
         
@@ -280,7 +301,40 @@ class Dog(Animal):
             if random.randint(0,99)>=80:
                 self.SetSpeed(random.randint(20,self.maxSpeed)) 
 
-                
+
+class Dinosaur(Animal):
+        
+    def __init__(self, breed = "T rex", size = 2000, forward = Vector3(0,0,1)):
+        super().__init__(forward = forward)
+        
+        self.initRotation = self.forward
+        self.size = size
+        self.breed = breed
+        self.maxSpeed = 200
+        self.speed = self.maxSpeed/2
+        
+        self.sprite = Sprite.Pickle2Sprite(Sprite.Sprite.spriteFolder + "\\trex.pickle")
+    
+
+    
+    def SpecUpdate(self):
+        pass
+    
+    def SpecMove(self):
+        pass
+        
+    def SpecGoal(Self):
+        pass
+     
+
+    def NoiseHandler(self, signal):        
+        if (signal.properties['gameObject'] is not self):
+            self.goals.AddGoal(Goal(self.Chase,[signal.properties['gameObject']], 100))
+
+    def Random(self):
+        pass
+
+     
 def Main():
     print(dir(Cat))
                 

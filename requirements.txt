@@ -1,0 +1,5 @@
+numpy
+matplotlib
+opensimplex
+pygame
+cv2

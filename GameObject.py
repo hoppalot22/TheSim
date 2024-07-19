@@ -81,9 +81,11 @@ class Interaction:
 
 class GameObject:
 
-    def __init__(self, name = "Nemo", position = Vector3(0,0,0), forward = Vector3(1,0,0), size = 1000):
+    def __init__(self, name = "Nemo", position = Vector3(0,0,0), forward = Vector3(1,0,0), size = 1000):        
+
         self.position = position
         self.forward = forward
+        self.initRotation = self.forward
         self.angle = 0
         self.name = name
         
@@ -99,7 +101,8 @@ class GameObject:
         [Vector3(math.cos(angle),0,math.sin(angle)),Vector3(0, 1, 0),Vector3(-math.sin(angle), 0, math.cos(angle))],
         [Vector3(math.cos(angle),-math.sin(angle),0),Vector3(math.sin(angle),math.cos(angle), 0),Vector3(0,0,1)]][axis]  
         
-        newForward = Vector3(R[0].DotProduct(self.forward), R[1].DotProduct(self.forward), R[2].DotProduct(self.forward))        
+        newForward = Vector3(R[0].DotProduct(self.forward), R[1].DotProduct(self.forward), R[2].DotProduct(self.forward))
+        #print(newForward)
         self.forward = newForward
         self.angle+=angle
     
